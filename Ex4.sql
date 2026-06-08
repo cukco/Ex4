@@ -1,11 +1,37 @@
-create view v_revenue_by_region as
-select region, sum(total_amount) as total_revenue from customer
-inner join orders on customer.customer_id = orders.customer_id
-group by region;
+create procedure calculate_discount(
+    p_id INT,
+    OUT p_final_price NUMERIC
+) language plpgsql
+as $$
+    declare
+        v_price int;
+        v_discount int;
+    begin
+        select price into v_price from products
+        where id=p_id;
 
-select * from v_revenue_by_region
-order by total_revenue desc limit 3;
+        select discount_percent into v_discount from products
+        where id=p_id;
 
-create view v_revenue_above_avg as
-select * from v_revenue_by_region
-where total_revenue > (select avg(total_revenue) from v_revenue_by_region);
+        if v_price is null then
+            raise notice 'Không tồn tại sản phẩm';
+            p_final_price:=null;
+            return;
+        end if;
+
+        if v_discount > 50 then
+            v_discount:=50;
+        end if;
+
+        update products
+        set price=price - price*v_discount/100 where id=p_id
+        returning price into p_final_price;
+        raise notice 'Cập nhật thành công';
+    exception
+        when others then
+            raise notice 'Xảy ra lỗi: %',SQLERRM;
+    rollback;
+    end;
+$$;
+
+call calculate_discount(6,null);
