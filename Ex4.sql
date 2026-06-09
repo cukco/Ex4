@@ -1,37 +1,44 @@
-create procedure calculate_discount(
-    p_id INT,
-    OUT p_final_price NUMERIC
-) language plpgsql
-as $$
+create or replace function f_check()
+returns trigger as $$
     declare
-        v_price int;
-        v_discount int;
+        f_quantity int;
     begin
-        select price into v_price from products
-        where id=p_id;
+        if(tg_op='INSERT') then
+            select stock into f_quantity from products
+            where id=new.product_id;
+            if(f_quantity < new.quantity) then
+                raise exception 'Không đủ hàng';
+            end if;
 
-        select discount_percent into v_discount from products
-        where id=p_id;
+            update products set stock = stock-new.quantity where id=new.product_id ;
+            return new;
+        elsif (tg_op='UPDATE') then
+            select stock into f_quantity from products
+            where id=new.product_id;
 
-        if v_price is null then
-            raise notice 'Không tồn tại sản phẩm';
-            p_final_price:=null;
-            return;
+            if(f_quantity < new.quantity - old.quantity) then
+                raise exception 'Không đủ hàng';
+            end if;
+
+            update products set stock = stock-new.quantity+old.quantity where id=new.product_id ;
+            return new;
+        elsif (tg_op='DELETE') then
+            update products set stock = stock+old.quantity where id=old.product_id ;
+
+            return old;
+            return null;
         end if;
-
-        if v_discount > 50 then
-            v_discount:=50;
-        end if;
-
-        update products
-        set price=price - price*v_discount/100 where id=p_id
-        returning price into p_final_price;
-        raise notice 'Cập nhật thành công';
-    exception
-        when others then
-            raise notice 'Xảy ra lỗi: %',SQLERRM;
-    rollback;
     end;
-$$;
+$$ language plpgsql;
 
-call calculate_discount(6,null);
+create trigger t_check
+    after delete or update or insert on orders
+    for each row
+    execute function f_check();
+
+insert into orders(product_id, quantity) values
+    (2,20);
+
+delete from orders
+where id=10;
+
