@@ -1,43 +1,29 @@
-class Rectangle{
-    private double width;
-    private double height;
-    public Rectangle(double width,double height){
-        this.height=height;
-        this.width=width;
+class Car{
+    private int currentSpeed = 0;
+    public void acclerate(){
+        currentSpeed += 10;
+        System.out.println("Car accelerates by default: +10 km/h");
     }
-    double getArea(){
-        return width*height;
+    public void acclerate(int speed){
+        currentSpeed +=speed;
+        System.out.println("Car accelerates by " + speed + " km/h");
     }
-    double getPerimeter(){
-        return 2*(width+height);
+    public void acclerate(int speed, int seconds){
+        int increase = speed * seconds;
+        currentSpeed += increase;
+        System.out.println("Car accelerates " + increase + " km/h (speed x time)");
     }
-    double getWidth(){
-        return width;
-    }
-    double getHeight(){
-        return height;
-    }
-    String pr(){
-        return  "Rectangle(width= "+width+", height= "+height+ ", area= "+getArea()+", perimeter= " +getPerimeter()+")";
+    public void printStatus(){
+        System.out.printf("Current speed: %d km/h",currentSpeed);
     }
 }
-public class Ex74 {
+public class Ex104 {
     public static void main(String[] args){
-        Rectangle r1 = new Rectangle(3, 4);
-        Rectangle r2 = new Rectangle(5, 2);
-        Rectangle r3 = new Rectangle(4.5, 3.5);
-        System.out.println(r1.pr());
-        System.out.println(r2.pr());
-        System.out.println(r3.pr());
-        Rectangle[] arr={r1,r2,r3};
-        double max=-1;
-        for(int i=0;i<3;i++){
-            if(max<arr[i].getArea()) max=arr[i].getArea();
-        }
-        System.out.println("Largest area: "+max);
-        for(int i=0;i<3;i++){
-            if(max==arr[i].getArea())
-                System.out.println(arr[i].pr());
-        }
+        Car merc=new Car();
+        merc.acclerate();
+        merc.acclerate(100);
+        merc.acclerate(100,2);
+        merc.printStatus();
+
     }
 }
